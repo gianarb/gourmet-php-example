@@ -1,0 +1,51 @@
+<?xml version="1.0"  encoding="UTF-8" ?>
+<project name="gourmet" basedir="." default="bundle">
+    <includepath classpath="lib/" />
+    <taskdef name="s3" classname="Corley\Phing\S3PutTask" />
+
+    <property file="config/deploy.properties" />
+
+    <tstamp />
+    <property name="APP_NAME" value="${appname}" />
+    <property name="VERSION" value="${DSTAMP}${TSTAMP}"/>
+    <property name="BUNDLE_NAME" value="${APP_NAME}"/>
+    <property name="BUNDLE_NAME_ZIP" value="${APP_NAME}.zip"/>
+
+    <if>
+        <not>
+            <available file='config/deploy.properties' type='file' />
+        </not>
+        <then>
+            <echo message="Missing deploy property file, configure your deploy on the fly" />
+            <propertyprompt propertyName="amazon.key" defaultValue="" promptText="Enter your AWS KEY" />
+            <propertyprompt propertyName="amazon.secret" defaultValue="" promptText="Enter your AWS SECRET" />
+            <propertyprompt propertyName="amazon.bucket" defaultValue="${amazon.bucket}" promptText="Enter your AWS Deploy Bucket" />
+            <propertyprompt propertyName="amazon.region" defaultValue="${amazon.region}" promptText="Enter your AWS Deploy Region" />
+        </then>
+        <else>
+            <echo message="Property deploy file exists" />
+        </else>
+    </if>
+
+    <target name="dep" description="Manage composer deps">
+        <exec command="composer install --no-dev -o" passthru="true" />
+    </target>
+
+    <target name="art" description="Create a new production bundle as ZIP artifact" depends="dep">
+        <exec command="git log -1 | grep commit | awk {'print $2'} | cut -b 1-8" outputProperty="GIT_HASH"/>
+        <echo>I will bundle the application in a zip container with name: ${BUNDLE_NAME_ZIP} for version: ${GIT_HASH}</echo>
+        <exec command="zip -r ${BUNDLE_NAME_ZIP} * -x *.git* -x *.zip -x *.phar -x build.xml -x README*"
+            passthru="true" />
+        <echo>Application bundled in archive "${BUNDLE_NAME_ZIP}".</echo>
+    </target>
+
+    <target name="upload" description="Deploy the production bundle to S3" depends="art">
+        <echo msg="Upload '${BUNDLE_NAME_ZIP}' on S3 bucket: '${amazon.bucket}' using key: '${amazon.key}'" />
+        <s3
+            key="${amazon.key}"
+            secret="${amazon.secret}"
+            bucket="${amazon.bucket}"
+            source="${BUNDLE_NAME_ZIP}"
+            object="${BUNDLE_NAME_ZIP}" />
+    </target>
+</project>

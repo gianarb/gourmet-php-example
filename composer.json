@@ -1,0 +1,27 @@
+{
+    "require": {
+        "aws/aws-sdk-php": "^2.3"
+    },
+    "require-dev": {
+        "phing/phing": "2.7.*",
+        "corley/phing-aws": "0.0.1",
+        "phpunit/phpunit": "^4.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AppTest\\": "test"
+        }
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Gianluca Arbezzano",
+            "email": "gianarb92@gmail.com"
+        }
+    ]
+}
